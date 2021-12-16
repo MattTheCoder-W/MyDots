@@ -1,0 +1,21 @@
+#!/bin/bash
+echo ">>> Getting space before cleaning"
+before=$(sudo du -sh /home/m4t1)
+echo ">>> Cleaning pacman cache"
+sudo pacman -Sc
+echo ">>> Pacman cache cleaned"
+echo ">>> List unused packages"
+sudo pacman -Qtdq
+echo ">>> Removing unused packages"
+sudo pacman -Rns $(pacman -Qtdq)
+echo ">>> Unused packages removed"
+echo ">>> Cleaning yay cache"
+yay -Sc
+echo ">>> Yay cache cleaned"
+echo ">>> Getting space after cleaning"
+after=$(sudo du -sh /home/m4t1)
+
+echo ">>> Space before cleaning: ${before}"
+echo ">>> Space after cleaning: ${after}"
+
+echo ">>> Goodbye!"
