@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+import cv2
+import os
+import argparse
+
+
+class Preview:
+    def __init__(self, img_path: str):
+        self.img_path = image_path
+        self.lumi = ".,-~:;=!*#$@"
+        self.divider = 255/len(self.lumi)
+
+    def preview(self):
+        img = cv2.imread(self.img_path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        w,h = self.automatic_width()
+        img = cv2.resize(img, (w, h), interpolation=cv2.INTER_NEAREST)
+        
+        for row in img:
+            row_string = ""
+            for pixel in row:
+                try:
+                    char = self.lumi[int(round(self.get_lumi(pixel)/self.divider, 0))]
+                except IndexError:
+                    char = self.lumi[-1]
+                row_string += self.make_color(pixel, char) if self.get_lumi(pixel) > 0 else " "
+            print(row_string)
+
+    @staticmethod
+    def automatic_width():
+        size = list(os.get_terminal_size())
+        size = [int(size[0]*0.75//2), int(size[1]*0.75)]
+        return size
+
+    @staticmethod
+    def make_color(color, char):
+        R, G, B = color
+        string = f"\x1b[38;2;{R};{G};{B}m{char}\x1b[0m"
+        return string
+
+    @staticmethod
+    def get_lumi(color):
+        return int(round(sum(color)/len(color), 0))
+
+
+def file_path(string):
+    if os.path.exists(string):
+        if not os.path.isdir(string):
+            return string
+        else:
+            print("This is directory not a file!")
+            exit(1)
+    else:
+        raise FileNotFoundError(string)
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("img", type=file_path, help="Path to image file to preview")
+    args = parser.parse_args()
+    args = dict(vars(args))
+    return args
+
+if __name__ == "__main__":
+    image_path = get_args()['img']
+    prev = Preview(image_path)
+    print(f">>> Start of: {image_path} <<<")
+    prev.preview()
+    print(f">>> End of: {image_path} <<<")
+

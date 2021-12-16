@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# This program displays git keys located in
+# /home/m4t1/Documents/keys folder
+
+
+# get_max_len(array_of_strings)
+function get_max_len() {
+	strings=($@)
+	max=-1
+	for name in "${strings[@]}"; do
+		len=$(($(wc -m <<< "$name")-1))
+		if [[ $len -gt $max ]]; then
+			max=$len
+		fi
+	done
+	echo $max
+}
+
+# get_len(string)
+function get_tabs() {
+	string=$1
+	echo $(($(($(wc -m <<< "$string")-1))/4))
+}
+
+
+files=($(ls /home/m4t1/Documents/keys/*.key))
+names=""
+contents=""
+
+for file in "${files[@]}"; do
+	IFS="/"; read -ra elements <<< "$file"; unset IFS
+	content=$(cat $file)
+	gitname=${elements[-1]}
+	names="$names $gitname"
+	contents="$contents $content"
+done
+
+maxlen=$(get_max_len $names)
+tabs=$(($maxlen/4))
+
+names=($names)
+contents=($contents)
+
+i=0
+for name in ${names[@]}; do
+	cur_tabs=$(($tabs-$(get_tabs $name)))
+	echo -n $name
+	for i in $(seq 0 $cur_tabs); do echo -n -e '\t'; done
+	echo ${contents[$i]}	
+	i=$(($i+1))
+done
+

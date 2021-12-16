@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+import os
+import sys
+
+class SpaceRemover:
+    def __init__(self, files: list):
+        self.files = files
+
+    def nospaces(self):
+        for file in self.files:
+            os.rename(file, file.replace(" ", "-"))
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: nospaces [FILES]")
+        exit(1)
+    files = sys.argv[1:]
+    end = False
+    for file in files:
+        if not os.path.exists(file):
+            print("FileNotFoundError:", file, "doesn't exist!")
+            end = True
+    if end:
+        exit(1)
+    remover = SpaceRemover(files)
+    print(">>> I will rename these files/directories:")
+    for file in files:
+        if file != file.replace(" ", "-"):
+            print("--", file, "-->", file.replace(" ", "-"))
+    print(">>> End of list")
+    confirm = input("[?] >>> Is that okay? [Y/n]: ")
+    if not confirm or "y" in confirm.lower():
+        print(">>> Renaming files...")
+        remover.nospaces()
+    else:
+        print(">>> NOT renaming files!")
+        exit(0)
+
