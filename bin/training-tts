@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+import argparse
+import sys
+
+
+class TSS:
+    def __init__(self, average: int, maximum: int, duration: int):
+        self.average = average
+        self.maximum = maximum
+        self.duration = duration
+        self.zones = {
+            "5": [list(range(90, 101)), [110, 130]],
+            "4": [list(range(80, 90)), [80, 80]],
+            "3": [list(range(70, 80)), [70, 70]],
+            "2": [list(range(60, 70)), [50, 60]],
+            "1": [list(range(50, 60)), [20, 40]]
+        }
+
+    def get_tss(self):
+        zone, part = self.get_zone()
+        tts_ph = self.zones[zone][1][part]
+        return round(tts_ph*(self.duration/60),1)
+
+    def get_zone(self):
+        percentage = self.average/self.maximum*100
+        zone = None
+        for key in self.zones:
+            if int(round(percentage, 0)) in self.zones[key][0]:
+                zone = key
+                part = self.zones[key][0].index(int(round(percentage, 0)))
+                part = 0 if part < 5 else 1
+        return (zone, part)
+
+
+def check_interactive():
+    out = bool("-i" not in sys.argv and "--interactive" not in sys.argv)
+    return out
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--interactive", required=False, action="store_true", help="Interactive mode")
+    parser.add_argument("-a", "--avg", required=check_interactive(), type=int, help="Average Harte Rate of training")
+    parser.add_argument("-m", "--max", required=check_interactive(), type=int, help="Maximum Harte Rate of training")
+    parser.add_argument("-t", "--time", required=check_interactive(), type=int, help="Duration of your workout in minutes")
+    args = dict(vars(parser.parse_args()))
+    return args
+
+
+def check_hr(hr):
+    if not hr:
+        print("[!] >> Enter heart rate!")
+        exit(1)
+    if hr < 30:
+        print("[!] >> This heart rate is too low... Please see a doctor")
+        exit(1)
+    if hr > 220:
+        print("[!] >> This hear rate is too high... Why are you there?")
+        exit(1)
+
+
+def check_time(time):
+    if not time or time <= 0:
+        print("[!] >> Enter valid time!")
+        exit(1)
+
+
+def interactive_mode():
+    args = {
+        "interactive": True,
+        "avg": 0,
+        "max": 0,
+        "time": 0
+    }
+    args['avg'] = int(input(">>> Enter average heart rate: "))
+    check_hr(args['avg'])
+    args['max'] = int(input(">>> Enter maximum heart rate: "))
+    check_hr(args['max'])
+    args['time'] = int(input(">>> Enter workout duration [minutes]: "))
+    check_time(args['time'])
+    return args
+
+
+if __name__ == "__main__":
+    args = get_args()
+    if args['interactive']:
+        args = interactive_mode()
+    
+    tss_calc = TSS(args['avg'], args['max'], args['time'])
+    tss = tss_calc.get_tss()
+    print("[+] >> TSS of your workout is:", tss)
+
+
