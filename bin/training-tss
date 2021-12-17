@@ -4,22 +4,25 @@ import sys
 
 
 class TSS:
-    def __init__(self, average: int, maximum: int, duration: int):
+    def __init__(self, average: int, maximum: int, duration: int, grade: int):
         self.average = average
         self.maximum = maximum
         self.duration = duration
+        self.grade = grade
         self.zones = {
             "5": [list(range(90, 101)), [110, 130]],
             "4": [list(range(80, 90)), [80, 80]],
             "3": [list(range(70, 80)), [70, 70]],
             "2": [list(range(60, 70)), [50, 60]],
-            "1": [list(range(50, 60)), [20, 40]]
+            "1": [list(range(50, 60)), [20, 40]],
+            "0": [list(range(0, 50)), [0, 5]]
         }
 
     def get_tss(self):
         zone, part = self.get_zone()
-        tts_ph = self.zones[zone][1][part]
-        return round(tts_ph*(self.duration/60),1)
+        tss_ph = self.zones[zone][1][part]
+        tss = (tss_ph*(self.duration/60))*(self.grade/10)
+        return round(tss, 1)
 
     def get_zone(self):
         percentage = self.average/self.maximum*100
@@ -36,6 +39,13 @@ def check_interactive():
     out = bool("-i" not in sys.argv and "--interactive" not in sys.argv)
     return out
 
+def grade(num: int):
+    num = int(num)
+    if num not in range(1, 11):
+        print("[!] >> Your grade is out of correct range!")
+        exit(1)
+    return num
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -43,6 +53,7 @@ def get_args():
     parser.add_argument("-a", "--avg", required=check_interactive(), type=int, help="Average Harte Rate of training")
     parser.add_argument("-m", "--max", required=check_interactive(), type=int, help="Maximum Harte Rate of training")
     parser.add_argument("-t", "--time", required=check_interactive(), type=int, help="Duration of your workout in minutes")
+    parser.add_argument("-g", "--grade", required=check_interactive(), type=grade, help="Grade for your workout (from 1 to 10)")
     args = dict(vars(parser.parse_args()))
     return args
 
@@ -70,7 +81,8 @@ def interactive_mode():
         "interactive": True,
         "avg": 0,
         "max": 0,
-        "time": 0
+        "time": 0,
+        "grade": 0
     }
     args['avg'] = int(input(">>> Enter average heart rate: "))
     check_hr(args['avg'])
@@ -78,6 +90,8 @@ def interactive_mode():
     check_hr(args['max'])
     args['time'] = int(input(">>> Enter workout duration [minutes]: "))
     check_time(args['time'])
+    args['grade'] = int(input(">>> Enter workout grade [1-5]: "))
+    grade(args['grade'])
     return args
 
 
@@ -86,7 +100,7 @@ if __name__ == "__main__":
     if args['interactive']:
         args = interactive_mode()
     
-    tss_calc = TSS(args['avg'], args['max'], args['time'])
+    tss_calc = TSS(args['avg'], args['max'], args['time'], args['grade'])
     tss = tss_calc.get_tss()
     print("[+] >> TSS of your workout is:", tss)
 
