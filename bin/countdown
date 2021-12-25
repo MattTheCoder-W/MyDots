@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+from datetime import datetime
+import time
+import argparse
+import os
+
+
+class Countdown:
+    def __init__(self, time: datetime, date=None):
+        self.today = datetime.now()
+        self.time = time
+        self.date = date if date is not None else datetime.now()
+        self.target = datetime(self.date.year, self.date.month, self.date.day, self.time.hour, self.time.minute, self.time.second)
+        self.started = 999
+
+    def count(self):
+        left = [1, 1, 1]
+        first = True
+        while sum(left) != 0:
+            sec_left = (self.target - datetime.now()).total_seconds()
+            left = self.sec_to_time(sec_left)
+            if first:
+                self.started = sec_left
+                first = False
+                print(f'Time left to {self.target}')
+            if len([x for x in left if x < 0]):
+                print("Target is in past!")
+                break
+            self.get_progress(sec_left, left)
+
+    @staticmethod
+    def sec_to_time(sec: int):
+        sec = int(round(sec, 0))
+        hours = sec//3600
+        sec -= hours*3600
+        minutes = sec//60
+        sec -= minutes*60
+        return [hours, minutes, sec]
+
+    def get_progress(self, left: int, f_left: list):
+        part = left/self.started
+        time_left = f"{str(f_left[0]).zfill(2)}:{str(f_left[1]).zfill(2)}:{str(f_left[2]).zfill(2)}"
+        info = f"[{time_left}] -> "
+        w = list(os.get_terminal_size())[0] - len(info)
+        fill_part = int(round(w*part, 0))
+        empty_part = int(w-fill_part)
+
+        bar = info + "#"*fill_part + "-"*empty_part
+        print(bar, end="\r")
+
+
+
+def get_args():
+    def time_input(string: str):
+        if string.count(":") == 1:
+            form = "%H:%M"
+        elif string.count(":") == 2:
+            form = "%H:%M:%S"
+        else:
+            print(f"{string} is not a valid time")
+            exit(1)
+
+        try:
+            valid = bool(datetime.strptime(string, form))
+        except ValueError:
+            valid = False
+
+        if not valid:
+            print(f"{string} is not a valid time!")
+            exit(1)
+
+        return datetime.strptime(string, form)
+
+    def date_input(string: str):
+        form = "%d-%m-%Y"
+        try:
+            valid = bool(datetime.strptime(string, form))
+        except ValueError:
+            valid = False
+
+        if not valid:
+            print(f"{string} is not a valid date!")
+            exit(1)
+
+        return datetime.strptime(string, form)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("time", type=time_input, help="Time to count down to [HH:MM / HH:MM:SS]")
+    parser.add_argument("-d", "--date", type=date_input, help="Specify date to count down to [DD-MM-YYYY]")
+    args = dict(vars(parser.parse_args()))
+    return args
+
+
+if __name__ == "__main__":
+    args = get_args()
+    count = Countdown(args['time'], args['date'])
+    count.count()
+    print()
+
