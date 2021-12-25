@@ -56,12 +56,12 @@ class Downloader:
         for i, vid in enumerate(video_links):
             if vid[0] > max_size[0]:
                 max_size = (vid[0], i)
-        final[0]=video_links[max_size[1]][1]
+        final[0]=video_links[max_size[1]][1:]
         max_size = (-1, -1)
         for i, vid in enumerate(audio_links):
             if vid[0] > max_size[0]:
                 max_size = (vid[0], i)
-        final[1]=audio_links[max_size[1]][1]
+        final[1]=audio_links[max_size[1]][1:]
         return final
 
     def get_links(self):
@@ -76,7 +76,7 @@ class Downloader:
             try:
                 headers = log['params']['response']['headers']
                 typ = headers['content-type']
-                if typ != "video/mp4" and typ != "audio/webm":
+                if typ not in ["video/mp4", "video/webm", "audio/webm"]:
                     continue
                 url = log['params']['response']['url']
                 size=int(headers['content-length'])
@@ -89,35 +89,37 @@ class Downloader:
                         break
                 url = '&'.join(url_parts)
                 if typ == "audio/webm":
-                    audio_links.append((size, url))
+                    audio_links.append((size, url, typ.split("/")[-1]))
                 else:
-                    video_links.append((size, url))
+                    video_links.append((size, url, typ.split("/")[-1]))
             except Exception as e:
                 pass
         return self.find_best_media(video_links, audio_links)
 
     def download(self):
         if not self.audio_only:
-            self.driver.get(self.media_links[0])
-            input("Press Ctrl+S and save as videoplayback.mp4")
-        self.driver.get(self.media_links[1])
-        input("Press Ctrl+S and save with as  videoplayback.webm")
+            self.driver.get(self.media_links[0][0])
+            input(f"Press Ctrl+S and save as videoplayback.{self.media_links[0][1]}")
+            os.rename(f"videoplayback.{self.media_links[0][1]}", "yt-download-temp-video.mp4")
+        self.driver.get(self.media_links[1][0])
+        input(f"Press Ctrl+S and save with as  videoplayback.{self.media_links[1][1]}")
+        os.rename(f"videoplayback.{self.media_links[1][1]}", "yt-download-temp-audio.mp3")
 
     def convert(self):
         if self.audio_only:
-            os.rename("videoplayback.mp3", self.output)
+            os.rename("yt-download-temp-audio.mp3", self.output)
             print(f"[+] >> Audio downloaded to: {self.output}")
             print("[*] >> Removing temp files...")
-            os.system("rm videoplayback.webm")
+            os.system("rm yt-download-temp-audio.mp3")
             print("[+] >> Temp files deleted")
         
         self.driver.quit()
 
-        os.system(f"ffmpeg -i videoplayback.mp4 -i videoplayback.webm -c:v copy -c:a aac {self.output}")
+        os.system(f"ffmpeg -i yt-download-temp-video.mp4 -i yt-download-temp-audio.mp3 -c:v copy -c:a aac {self.output}")
 
         print(f"[+] >> Video and audio downloaded to: {self.output}")
         print("[*] >> Removing temp files...")
-        os.system("rm videoplayback.mp4 videoplayback.webm")
+        os.system("rm yt-download-temp-audio.mp3 yt-download-temp-video.mp4")
         print("[+] >> Temp files deleted")
 
 
@@ -143,6 +145,4 @@ def get_args():
 if __name__ == "__main__":
     args = get_args()
     downloader = Downloader(args['link'], args['output'], args['audio_only'])
-   
-    print("[+] >> END")
     
