@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+import json
+import os
+import argparse
+import requests
+
+'''
+Author: MattTheCoder-W
+Usage:
+    ./analyze.py <URL>
+'''
+
+
+class Downloader:
+    def __init__(self, link: str, output: str, audio_only=False):
+        self.link = link
+        self.output = output
+        self.audio_only = audio_only
+        self.driver = self.setup_driver()
+        self.media_links = self.get_links()
+        self.download()
+        self.convert()
+        print("[+] >> Everything done!")
+
+    def setup_driver(self):
+        os.environ['XDG_DOWNLOAD_DIR'] = "/home/m4t1/Desktop/"
+        desired_capabilities = DesiredCapabilities.CHROME
+        desired_capabilities["goog:loggingPrefs"] = {"performance": "ALL"}
+        options = webdriver.ChromeOptions()
+        prefs = {"savefile.default_directory" : os.getcwd(),
+                "savefile.directory_upgrade": True}
+        options.add_experimental_option("prefs",prefs)
+        options.add_argument("--ignore-certificate-errors")
+        driver = webdriver.Chrome(options=options,
+                                 desired_capabilities=desired_capabilities)
+        return driver
+
+    def get_logs(self):
+        logs = self.driver.get_log("performance")
+        log_data = "["
+        for log in logs:
+            network_log = json.loads(log['message'])['message']
+            if ("Network.response" in network_log['method']
+                    or "Network.request" in network_log['method']
+                    or "Network.webSocket" in network_log['method']):
+                log_data += json.dumps(network_log)+","
+        log_data += "{}]"
+        logs = json.loads(log_data)
+        return logs
+
+    def find_best_media(self, video_links: list, audio_links: list):
+        final = [None, None] # Video, Audio
+        max_size = (-1, -1)
+        for i, vid in enumerate(video_links):
+            if vid[0] > max_size[0]:
+                max_size = (vid[0], i)
+        final[0]=video_links[max_size[1]][1]
+        max_size = (-1, -1)
+        for i, vid in enumerate(audio_links):
+            if vid[0] > max_size[0]:
+                max_size = (vid[0], i)
+        final[1]=audio_links[max_size[1]][1]
+        return final
+
+    def get_links(self):
+        self.driver.get(self.link)
+
+        input("Now set desired settings...")
+
+        logs = self.get_logs()
+        audio_links, video_links = ([],[])
+
+        for log in logs:
+            try:
+                headers = log['params']['response']['headers']
+                typ = headers['content-type']
+                if typ != "video/mp4" and typ != "audio/webm":
+                    continue
+                url = log['params']['response']['url']
+                size=int(headers['content-length'])
+                if "range" not in url:
+                    continue
+                url_parts = url.split("&")
+                for i in range(len(url_parts)):
+                    if "range=" in url_parts[i]:
+                        url_parts.pop(i)
+                        break
+                url = '&'.join(url_parts)
+                if typ == "audio/webm":
+                    audio_links.append((size, url))
+                else:
+                    video_links.append((size, url))
+            except Exception as e:
+                pass
+        return self.find_best_media(video_links, audio_links)
+
+    def download(self):
+        if not self.audio_only:
+            self.driver.get(self.media_links[0])
+            input("Press Ctrl+S and save as videoplayback.mp4")
+        self.driver.get(self.media_links[1])
+        input("Press Ctrl+S and save with as  videoplayback.webm")
+
+    def convert(self):
+        if self.audio_only:
+            os.rename("videoplayback.mp3", self.output)
+            print(f"[+] >> Audio downloaded to: {self.output}")
+            print("[*] >> Removing temp files...")
+            os.system("rm videoplayback.webm")
+            print("[+] >> Temp files deleted")
+        
+        self.driver.quit()
+
+        os.system(f"ffmpeg -i videoplayback.mp4 -i videoplayback.webm -c:v copy -c:a aac {self.output}")
+
+        print(f"[+] >> Video and audio downloaded to: {self.output}")
+        print("[*] >> Removing temp files...")
+        os.system("rm videoplayback.mp4 videoplayback.webm")
+        print("[+] >> Temp files deleted")
+
+
+def get_args():
+    def link(string: str):
+        if "http" not in string:
+            print(f"[!] >> {string} is not a valid link!")
+            exit(1)
+        try:
+            r = requests.get(string)
+        except Exception as e:
+            print("[!] >> Error while checking URL!")
+            exit(1)
+        return string
+    parser = argparse.ArgumentParser()
+    parser.add_argument("link", type=link, help="Link to download from")
+    parser.add_argument("output", type=str, help="Output file to save data to")
+    parser.add_argument("-a", "--audio-only", action="store_true", help="Download audio only")
+    args = dict(vars(parser.parse_args()))
+    return args
+
+
+if __name__ == "__main__":
+    args = get_args()
+    downloader = Downloader(args['link'], args['output'], args['audio_only'])
+   
+    print("[+] >> END")
+    
