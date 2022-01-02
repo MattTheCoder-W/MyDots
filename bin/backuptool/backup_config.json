@@ -1,0 +1,17 @@
+{
+	"ommit": [
+		"MegaNZ",
+		"go",
+		"remnote",
+		"Unity",
+		"backup"
+	],
+	"dots": {
+		".config": [
+			"i3",
+			"polybar"
+		],
+		".local": "*", 
+		".bashrc": "*"
+	}
+}
