@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.chrome.options import Options
+import argparse
+import time
+import json
+import requests
+import os
+
+
+class Downloader:
+    def __init__(self, links: list, output: str, replace: bool):
+        self.links = links
+        self.output = output
+        self.replace = replace
+        self.driver = self.setup_driver()
+        for i, link in enumerate(self.links):
+            self.download(link, prefix=str(i+1))
+
+    def setup_driver(self):
+        options = Options()
+        options.add_argument("--headless")
+        d = DesiredCapabilities.CHROME
+        d["goog:loggingPrefs"] = {"performance": "ALL"}
+        driver = webdriver.Chrome(options=options, desired_capabilities=d)
+        return driver
+
+    def get_media(self):
+        media = [None, None] # Video, audio
+        logs = self.driver.get_log("performance")
+        maxes = [-1, -1]
+        for log in logs:
+            log = json.loads(log['message'])['message']
+            if not [x for x in ["Network.response", "Network.request", "Network.webSocket"] if x in log['method']]:
+                continue
+            try:
+                headers = log['params']['response']['headers']
+                typ = headers['content-type']
+                if "audio" not in typ and "video" not in typ:
+                    continue
+                url = log['params']['response']['url']
+                if "range" not in url:
+                    continue
+                size = int(headers['content-length'])
+                if "audio" in typ:
+                    if size > maxes[1]:
+                        media[1] = url
+                        maxes[1] = size
+                else:
+                    if size > maxes[0]:
+                        media[0] = url
+                        maxes[0] = size
+            except KeyError:
+                pass
+        for i in range(2):
+            url = media[i]
+            short = []
+            parts = url.split("&")
+            for part in parts:
+                name, value = part.split("=")
+                if name != "range":
+                    short.append(part)
+            short = '&'.join(short)
+            media[i] = short
+        return media
+
+    def get_title(self):
+        title = self.driver.title
+        if title.endswith("YouTube"):
+            title = "-".join(title.split(" - ")[:-1]).replace(" ", "-")
+        return title
+
+    def download(self, link: str, prefix=""):
+        self.driver.get(link)
+        title = self.get_title() + ".mp3"
+        if prefix:
+            title = prefix + "-" + title
+        if self.replace and os.path.exists(title):
+            print("[!] >> File already exists! Skipping")
+            return
+        print("[*] >> Downloading")
+        print("[*] >> Filename:", title)
+        video, audio = self.get_media()
+        with requests.get(audio, stream=True) as r:
+            size = r.headers['Content-length']
+            with open(title, "wb") as f:
+                for i, chunk in enumerate(r.iter_content(chunk_size=8096)):
+                    print(f"Download: {i*8096//1000}/{int(size)//1000} -> {round(i*8096/int(size)*100, 1)}%", end="\r")
+                    f.write(chunk)
+                print()
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("links", nargs="+", type=str, help="Link to download")
+    parser.add_argument("-o", "--output", type=str, help="Output file")
+    parser.add_argument("--replace", action="store_true", help="Replace existing files")
+    args = dict(vars(parser.parse_args()))
+    return args
+
+
+if __name__ == "__main__":
+    args = get_args()
+    print(args)
+    downloader = Downloader(list(args['links']), args['output'], args['replace'])
+    print("[+] >> END")
+

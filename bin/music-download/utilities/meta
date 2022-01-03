@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+
+AR = "Kofi\ Stone"
+AL = "Nobody\ Cares\ Till\ Everybody\ Dpes"
+Y = "2021"
+COVER = "cover.jpg"
+N = "15"
+
+for file in os.listdir("testing"):
+    if not file.endswith(".mp3"):
+        continue
+    title = ' '.join(file.split("-")[1:]).replace(" ", "\ ").replace(".mp3", "")
+    num = int(file.split("-")[0])
+    cmd = f"eyeD3 --add-image {COVER}:FRONT_COVER -a {AR} -A {AL} -b {AR} -t {title} -n {num} -N {N} -Y {Y} ./testing/{file}"
+    print(cmd)
+    os.system(cmd)

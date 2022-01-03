@@ -1,0 +1,16 @@
+#!/usr/bin/env python3
+import os
+
+def rename():
+    for file in os.listdir("."):
+        if not file.endswith(".mp3"):
+            continue
+        if file != file.replace("-Kofi-Stone-", "-"):
+            os.rename(file, file.replace("-Kofi-Stone-", "-"))
+        if int(file.split("-")[0]) < 10:
+            print(file)
+            num = int(file.split("-")[0])
+            num = str(num).zfill(2)
+            os.rename(file, f"{num}{file[1:]}")
+
+rename()
