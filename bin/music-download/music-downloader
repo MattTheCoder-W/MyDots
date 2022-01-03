@@ -14,9 +14,13 @@ class Downloader:
         self.links = links
         self.output = output
         self.replace = replace
-        self.driver = self.setup_driver()
         for i, link in enumerate(self.links):
-            self.download(link, prefix=str(i+1))
+            while True:
+                self.driver = self.setup_driver()
+                if self.download(link, prefix=str(i+1)) == False:
+                    continue
+                self.driver.quit()
+                break
 
     def setup_driver(self):
         options = Options()
@@ -56,7 +60,10 @@ class Downloader:
         for i in range(2):
             url = media[i]
             short = []
-            parts = url.split("&")
+            try:
+                parts = url.split("&")
+            except AttributeError:
+                return (False, False)
             for part in parts:
                 name, value = part.split("=")
                 if name != "range":
@@ -73,7 +80,7 @@ class Downloader:
 
     def download(self, link: str, prefix=""):
         self.driver.get(link)
-        title = self.get_title() + ".mp3"
+        title = self.get_title().replace("(", "[").replace(")", "]")
         if prefix:
             title = prefix + "-" + title
         if self.replace and os.path.exists(title):
@@ -82,13 +89,17 @@ class Downloader:
         print("[*] >> Downloading")
         print("[*] >> Filename:", title)
         video, audio = self.get_media()
+        if video == False:
+            return False
         with requests.get(audio, stream=True) as r:
             size = r.headers['Content-length']
-            with open(title, "wb") as f:
+            with open(title+".webm", "wb") as f:
                 for i, chunk in enumerate(r.iter_content(chunk_size=8096)):
                     print(f"Download: {i*8096//1000}/{int(size)//1000} -> {round(i*8096/int(size)*100, 1)}%", end="\r")
                     f.write(chunk)
                 print()
+        os.system(f"ffmpeg -i {title}.webm -vn -ab 128k -ar 48000 -y {title}.mp3")
+        os.system(f"rm {title}.webm")
 
 
 def get_args():
