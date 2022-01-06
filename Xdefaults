@@ -1,6 +1,6 @@
 URxvt.perl-ext-common: default,tabbed,matcher,resize-font,-tabbed
 
-*.font: xft:Source\ Code\ Pro:size=14
+*.font: xft:Source\ Code\ Pro:size=18
 
 ! special
 *.foreground:   #c5c8c6
