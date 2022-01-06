@@ -1,3 +1,5 @@
+URxvt.perl-ext-common: default,tabbed,matcher,resize-font,-tabbed
+
 *.font: xft:Source\ Code\ Pro:size=14
 
 ! special
@@ -38,3 +40,9 @@
 *.color15:      #ffffff
 
 URxvt.scrollBar: false
+
+URxvt.keysym.C-minus:     resize-font:smaller
+URxvt.keysym.C-equal:      resize-font:bigger
+URxvt.keysym.C-0:     resize-font:reset
+URxvt.keysym.C-question:  resize-font:show
+
