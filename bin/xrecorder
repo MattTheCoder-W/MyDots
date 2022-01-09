@@ -1,0 +1,58 @@
+#!/bin/bash
+
+POSITIONAL=()
+rate=60
+
+while [[ $# -gt 0 ]]; do
+	case $1 in
+		-r|--rate)
+			rate=$2
+			shift
+			shift
+			;;
+		-m|--mic)
+			MICROPHONE="$2"
+			shift
+			shift
+			;;
+		-l|--list)
+			LIST=1
+			shift
+			;;
+		-*|--*)
+			echo "Unknown option $1"
+			exit 1
+			;;
+		*)
+			POSITIONAL+=("$1")
+			shift
+			;;
+	esac
+done
+
+set -- "${POSITIONAL[@]}"
+
+if [[ $LIST -eq 1 ]]; then
+	xrandr
+	arecord -l
+	exit 0
+fi
+
+if [[ $# -lt 1 ]]; then
+	echo "Usage: [-m|--mic id] [-l|--list] OUTPUT"
+	exit 1
+fi
+
+output=$1
+
+echo "POSITIONAL: $@"
+echo "MICROPHONE: ${MICROPHONE}"
+echo "OUTPUT:     $output"
+echo "RATE:       $rate"
+
+if [[ ! -z $MICROPHONE ]]; then
+	ffmpeg -f x11grab -s 1920x1080 -r $rate -i :0.0+0,0 -f alsa -ac 1 -i hw:$MICROPHONE "$1"
+else
+	ffmpeg -f x11grab -s 1920x1080 -r $rate -i :0.0+0,0 "$1"
+fi
+
