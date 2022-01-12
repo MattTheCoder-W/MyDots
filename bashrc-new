@@ -1,0 +1,67 @@
+# ~/.bashrc: executed by bash(1) for non-login shells.
+
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoreboth
+shopt -s histappend
+shopt -s checkwinsize
+shopt -s extglob
+HISTSIZE=1000
+HISTFILESIZE=2000
+
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# set a fancy prompt (non-color, unless we know we "want" color)
+case "$TERM" in
+    xterm-color|*-256color) color_prompt=yes;;
+esac
+
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# some more ls aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+# rm aliases
+alias rm="rm -I"
+
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+export PS1="\[\e[31m\][\[\e[m\]\[\e[34m\]\u\[\e[m\]\[\e[32m\]@\[\e[m\]\[\e[33m\]\h\[\e[m\] \[\e[35m\]\W\[\e[m\]\[\e[31m\]]\[\e[m\]\\$ "
+
+export PATH=$PATH:/home/m4t1/.local/bin
+export PATH=$PATH:/home/m4t1/.local/bin/VSCode
+export PATH=$PATH:/home/m4t1/.local/bin/ani-cli-fork
+export PATH=$PATH:/home/m4t1/.local/bin/xmrig/build
+export PATH=$PATH:/home/m4t1/.local/bin/blender
+export PATH=$PATH:/home/m4t1/.local/bin/imgprev
+export PATH=$PATH:/home/m4t1/.local/bin/nospaces
+
+wm=($(wmctrl -m | head -n 1))
+if [[ "${wm[1]}" == "dwm" ]]; then
+	/home/$USER/.config/dwm/int-check
+fi
