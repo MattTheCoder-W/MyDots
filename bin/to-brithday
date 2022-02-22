@@ -5,25 +5,32 @@ import time
 
 birth = datetime(2022, 4, 6)
 
-while True:
-	now = datetime.now()
-	to_birth = (birth - now).total_seconds()
-	hours = int(to_birth//3600)
-	to_birth -= hours*3600
-	minutes = int(to_birth//60)
-	to_birth -= minutes*60
-	to_birth = int(round(to_birth, 0))
+try:
+    while True:
+        now = datetime.now()
+        to_birth = (birth - now).total_seconds()
+        hours = int(to_birth//3600)
+        to_birth -= hours*3600
+        minutes = int(to_birth//60)
+        to_birth -= minutes*60
+        to_birth = int(round(to_birth, 0))
 
-	hours = str(hours).zfill(2)
-	minutes = str(minutes).zfill(2)
-	to_birth = str(to_birth).zfill(2)
+        hours = str(hours).zfill(2)
+        minutes = str(minutes).zfill(2)
+        to_birth = str(to_birth).zfill(2)
 
-	time_str = f"{hours}:{minutes}:{to_birth}"
+        time_str = f"{hours}:{minutes}:{to_birth}"
 
-	size = list(os.get_terminal_size())
-	y = (size[1]//2) - 5
+        size = list(os.get_terminal_size())
+        y = (size[1]//2) - 5
 
-	print("\n"*y, end="")
-	os.system(f"figlet -c -t -k -f big {time_str}")
-	print("\n"*y, end="")
-	time.sleep(0.5)
+        print("\n"*y, end="")
+        os.system(f"figlet -c -t -k -f big {time_str}")
+        print("\n"*y, end="")
+        time.sleep(0.5)
+except KeyboardInterrupt:
+    pass
+except Exception as e:
+    print(str(e))
+    exit()
+
