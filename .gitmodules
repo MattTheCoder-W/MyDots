@@ -1,3 +1,0 @@
-[submodule "config/urxvt-resize-font"]
-	path = config/urxvt-resize-font
-	url = https://github.com/simmel/urxvt-resize-font.git
